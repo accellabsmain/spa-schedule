@@ -24,18 +24,33 @@ export const storage = {
   },
 
   saveScheduleJSON: async (json: IngestedScheduleJSON): Promise<Schedule> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Pengguna tidak terautentikasi. Silakan login kembali.');
+
     let { data: schedule } = await supabase.from('schedules').select('*').eq('date', json.date).maybeSingle();
     
     if (schedule) {
       await supabase.from('schedules').update({ created_at: new Date().toISOString() }).eq('id', schedule.id);
     } else {
-      const newSchedule = { id: 'sched-' + generateUUID(), date: json.date, created_at: new Date().toISOString() };
-      const { data } = await supabase.from('schedules').insert([newSchedule]).select().single();
+      const newSchedule = { 
+        id: 'sched-' + generateUUID(), 
+        user_id: userId,
+        date: json.date, 
+        created_at: new Date().toISOString() 
+      };
+      const { data, error } = await supabase.from('schedules').insert([newSchedule]).select().single();
+      if (error) throw new Error(`Gagal membuat jadwal baru: ${error.message}`);
       schedule = data;
+    }
+
+    if (!schedule) {
+      throw new Error('Gagal memproses jadwal.');
     }
 
     const newTasks = json.tasks.map((t, idx) => ({
       id: `task-${schedule!.id}-${idx}-${generateUUID()}`,
+      user_id: userId,
       schedule_id: schedule!.id,
       task_name: t.task_name,
       target_time: t.target_time,
@@ -45,24 +60,43 @@ export const storage = {
       tingkat_kesulitan: t.tingkat_kesulitan || 'Sedang'
     }));
 
-    await supabase.from('tasks').insert(newTasks);
-    return schedule!;
+    const { error: tasksError } = await supabase.from('tasks').insert(newTasks);
+    if (tasksError) throw new Error(`Gagal menyimpan daftar tugas: ${tasksError.message}`);
+
+    return schedule;
   },
 
   addTask: async (dateStr: string, taskData: Omit<Task, 'id' | 'schedule_id' | 'is_done' | 'completed_time'>): Promise<Task> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Pengguna tidak terautentikasi. Silakan login kembali.');
+
     let { data: schedule } = await supabase.from('schedules').select('*').eq('date', dateStr).maybeSingle();
     if (!schedule) {
-      const newSchedule = { id: 'sched-' + generateUUID(), date: dateStr, created_at: new Date().toISOString() };
-      const { data } = await supabase.from('schedules').insert([newSchedule]).select().single();
+      const newSchedule = { 
+        id: 'sched-' + generateUUID(), 
+        user_id: userId,
+        date: dateStr, 
+        created_at: new Date().toISOString() 
+      };
+      const { data, error } = await supabase.from('schedules').insert([newSchedule]).select().single();
+      if (error) throw new Error(`Gagal membuat jadwal baru: ${error.message}`);
       schedule = data;
     }
+
+    if (!schedule) {
+      throw new Error('Gagal memproses jadwal.');
+    }
+
     const newTask = {
       ...taskData,
-      id: `task-${schedule!.id}-manual-${generateUUID()}`,
-      schedule_id: schedule!.id,
+      id: `task-${schedule.id}-manual-${generateUUID()}`,
+      user_id: userId,
+      schedule_id: schedule.id,
       is_done: false
     };
-    const { data } = await supabase.from('tasks').insert([newTask]).select().single();
+    const { data, error } = await supabase.from('tasks').insert([newTask]).select().single();
+    if (error) throw new Error(`Gagal menambahkan tugas baru: ${error.message}`);
     return data;
   },
 
