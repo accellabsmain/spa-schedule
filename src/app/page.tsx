@@ -9,10 +9,13 @@ import TaskAccordion from '../components/TaskAccordion';
 import LoadingScreen from '../components/LoadingScreen';
 import TaskModal from '../components/TaskModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Plus, ChevronLeft, ChevronRight, Compass, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useRouter } from 'next/navigation';
+import { Calendar, Plus, ChevronLeft, ChevronRight, Timer, Sparkles, RefreshCw, Loader2, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [activeDate, setActiveDate] = useState<string>('');
   const [activeDateOffset, setActiveDateOffset] = useState<number>(0);
   const [scheduleData, setScheduleData] = useState<{ schedule: Schedule | null; tasks: Task[] }>({
@@ -27,9 +30,29 @@ export default function DashboardPage() {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
   useEffect(() => {
-    const todayStr = getLocalDateString(0);
-    setActiveDate(todayStr);
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        const todayStr = getLocalDateString(0);
+        setActiveDate(todayStr);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) router.push('/login');
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const handleLogout = async () => {
+    if (confirm('Keluar dari sesi Anda?')) {
+      await supabase.auth.signOut();
+    }
+  };
 
   useEffect(() => {
     if (!activeDate) return;
@@ -132,7 +155,12 @@ export default function DashboardPage() {
         <header className="px-5 py-4 flex items-center justify-between border-b border-zinc-200 sticky top-0 bg-white/80 backdrop-blur-md z-20 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
-              <Compass className="w-4 h-4 text-indigo-600 animate-pulse" />
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Timer className="w-4 h-4 text-indigo-600" />
+              </motion.div>
             </div>
             <div>
               <h1 className="text-sm font-bold tracking-tight text-zinc-900 leading-none flex items-center gap-1.5">
@@ -161,6 +189,13 @@ export default function DashboardPage() {
             >
               <Sparkles className="w-3.5 h-3.5" /> Auto-JSON
             </Link>
+            <button
+              onClick={handleLogout}
+              title="Keluar"
+              className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-500 hover:text-rose-700 hover:bg-rose-100 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </header>
 
