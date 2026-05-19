@@ -11,7 +11,7 @@ import TaskModal from '../components/TaskModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Calendar, Plus, ChevronLeft, ChevronRight, Timer, Sparkles, RefreshCw, Loader2, LogOut } from 'lucide-react';
+import { Calendar, Plus, ChevronLeft, ChevronRight, Timer, Sparkles, RefreshCw, Loader2, LogOut, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -116,6 +116,16 @@ export default function DashboardPage() {
     if (confirm('Yakin ingin menghapus jadwal ini secara permanen?')) {
       setIsFetching(true);
       await storage.deleteTask(taskId);
+      const data = await storage.getScheduleByDate(activeDate);
+      setScheduleData(data);
+      setIsFetching(false);
+    }
+  };
+
+  const handleDeleteAllTasks = async () => {
+    if (confirm('Yakin ingin menghapus SEMUA jadwal pada hari ini? Tindakan ini tidak dapat dibatalkan.')) {
+      setIsFetching(true);
+      await storage.deleteAllTasksByDate(activeDate);
       const data = await storage.getScheduleByDate(activeDate);
       setScheduleData(data);
       setIsFetching(false);
@@ -249,7 +259,18 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <h3 className="text-xs font-bold text-zinc-500 tracking-wider uppercase">Kategori Agenda Tugas</h3>
-                  <span className="text-[10px] text-zinc-400 font-mono font-medium">Total: {scheduleData.tasks.length} Jadwal</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-400 font-mono font-medium">Total: {scheduleData.tasks.length} Jadwal</span>
+                    {scheduleData.tasks.length > 0 && (
+                      <button
+                        onClick={handleDeleteAllTasks}
+                        className="flex items-center gap-1 text-[10px] text-rose-500 hover:text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded-md transition-colors border border-rose-100"
+                        title="Hapus Semua Tugas"
+                      >
+                        <Trash2 className="w-3 h-3" /> Hapus Semua
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <TaskAccordion tasks={scheduleData.tasks} onToggleTask={handleToggleTask} onEditTask={handleEditTask} onDeleteTask={handleDeleteTask} />
               </div>

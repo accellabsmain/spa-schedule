@@ -109,6 +109,13 @@ export const storage = {
     await supabase.from('tasks').delete().eq('id', taskId);
   },
 
+  deleteAllTasksByDate: async (dateStr: string): Promise<void> => {
+    const { data: schedule } = await supabase.from('schedules').select('id').eq('date', dateStr).maybeSingle();
+    if (!schedule) return;
+
+    await supabase.from('tasks').delete().eq('schedule_id', schedule.id);
+  },
+
   toggleTask: async (task: Task): Promise<{ task: Task; adherenceBadge: 'On Time' | 'Delayed' | 'Late' | undefined }> => {
     const isDone = !task.is_done;
     let timeStr: string | undefined = undefined;
