@@ -71,10 +71,10 @@ export default function UploadPage() {
 
     try {
       if (!selectedFile) throw new Error('Mohon pilih atau tarik berkas JSON terlebih dahulu.');
-      
+
       const fileText = await selectedFile.text();
       let parsedData: IngestedScheduleJSON;
-      
+
       try {
         parsedData = JSON.parse(fileText);
       } catch (err) {
@@ -93,10 +93,10 @@ export default function UploadPage() {
       });
 
       setIsLoading(true);
-      
+
       // Mengirim data JSON ke Supabase secara langsung!
       await storage.saveScheduleJSON(parsedData);
-      
+
       setIsLoading(false);
       router.push('/');
     } catch (err: any) {
@@ -109,7 +109,7 @@ export default function UploadPage() {
     }
   };
 
-  if (isLoading) return <LoadingScreen message="Menyimpan jadwal ke Supabase Cloud..." />;
+  if (isLoading) return <LoadingScreen message="Menyimpan jadwal Personal..." />;
 
   return (
     <div className="min-h-screen bg-[#f4f4f5] text-zinc-900 flex justify-center selection:bg-indigo-500/20 selection:text-indigo-900">
@@ -142,19 +142,18 @@ export default function UploadPage() {
                 </label>
               </div>
 
-              <div 
-                className={`w-full rounded-2xl border-2 border-dashed p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer shadow-sm ${
-                  isDragging ? 'border-indigo-500 bg-indigo-50 scale-[0.99]' : 
-                  selectedFile ? 'border-indigo-300 bg-indigo-50/30 hover:bg-indigo-50/50' : 
-                  'border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
-                }`}
+              <div
+                className={`w-full rounded-2xl border-2 border-dashed p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer shadow-sm ${isDragging ? 'border-indigo-500 bg-indigo-50 scale-[0.99]' :
+                  selectedFile ? 'border-indigo-300 bg-indigo-50/30 hover:bg-indigo-50/50' :
+                    'border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                  }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => document.getElementById('file-upload')?.click()}
               >
                 <input id="file-upload" type="file" accept=".json,application/json" className="hidden" onChange={handleFileChange} />
-                
+
                 {selectedFile ? (
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
                     <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3 text-indigo-600 shadow-sm border border-indigo-200">
@@ -183,14 +182,14 @@ export default function UploadPage() {
             )}
 
             <button type="submit" disabled={!selectedFile || isLoading} className={`w-full rounded-2xl py-3.5 font-bold text-sm tracking-wide text-white transition-all flex items-center justify-center gap-2 shadow-lg ${selectedFile ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] shadow-indigo-600/30 cursor-pointer' : 'bg-zinc-300 text-zinc-100 shadow-none cursor-not-allowed'}`}>
-              Push ke Supabase <ArrowRight className="w-4 h-4" />
+              Push Cloud <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
 
         <footer className="py-6 text-center border-t border-zinc-200 bg-zinc-50">
           <p className="text-[10px] text-zinc-400 tracking-wider font-mono font-medium">
-            SPA MVP • CLOUD DATABASE ENABLED
+            SPA MVP | version 1.0.1
           </p>
         </footer>
       </div>

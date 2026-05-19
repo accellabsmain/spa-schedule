@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [viewMode, setViewMode] = useState<'category' | 'time'>('category');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -197,7 +198,7 @@ export default function DashboardPage() {
               href="/upload"
               className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold tracking-wide text-white transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Auto-JSON
+              <Sparkles className="w-3.5 h-3.5" /> Upload
             </Link>
             <button
               onClick={handleLogout}
@@ -258,9 +259,27 @@ export default function DashboardPage() {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <h3 className="text-xs font-bold text-zinc-500 tracking-wider uppercase">Kategori Agenda Tugas</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-400 font-mono font-medium">Total: {scheduleData.tasks.length} Jadwal</span>
+                    <button
+                      onClick={() => setViewMode('category')}
+                      className={`text-xs font-bold tracking-wider uppercase pb-0.5 border-b-2 transition-all ${
+                        viewMode === 'category' ? 'text-indigo-600 border-indigo-600' : 'text-zinc-400 border-transparent hover:text-zinc-500'
+                      }`}
+                    >
+                      Kategori
+                    </button>
+                    <span className="text-zinc-300 text-xs">|</span>
+                    <button
+                      onClick={() => setViewMode('time')}
+                      className={`text-xs font-bold tracking-wider uppercase pb-0.5 border-b-2 transition-all ${
+                        viewMode === 'time' ? 'text-indigo-600 border-indigo-600' : 'text-zinc-400 border-transparent hover:text-zinc-500'
+                      }`}
+                    >
+                      Urut Waktu
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-400 font-mono font-medium">Total: {scheduleData.tasks.length}</span>
                     {scheduleData.tasks.length > 0 && (
                       <button
                         onClick={handleDeleteAllTasks}
@@ -272,7 +291,13 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <TaskAccordion tasks={scheduleData.tasks} onToggleTask={handleToggleTask} onEditTask={handleEditTask} onDeleteTask={handleDeleteTask} />
+                <TaskAccordion 
+                  tasks={scheduleData.tasks} 
+                  onToggleTask={handleToggleTask} 
+                  onEditTask={handleEditTask} 
+                  onDeleteTask={handleDeleteTask} 
+                  viewMode={viewMode}
+                />
               </div>
             </motion.div>
           </AnimatePresence>

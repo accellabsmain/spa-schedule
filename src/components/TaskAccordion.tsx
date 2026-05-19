@@ -11,6 +11,7 @@ interface TaskAccordionProps {
   onToggleTask: (taskId: string) => void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (taskId: string) => void;
+  viewMode?: 'category' | 'time';
 }
 
 const getCategoryIcon = (category: string) => {
@@ -30,7 +31,7 @@ const getCategoryIcon = (category: string) => {
   return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
 };
 
-export default function TaskAccordion({ tasks, onToggleTask, onEditTask, onDeleteTask }: TaskAccordionProps) {
+export default function TaskAccordion({ tasks, onToggleTask, onEditTask, onDeleteTask, viewMode = 'category' }: TaskAccordionProps) {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     'Morning Routine': true,
     'Deep Work': true,
@@ -85,10 +86,127 @@ export default function TaskAccordion({ tasks, onToggleTask, onEditTask, onDelet
     }
   };
 
+  const renderTask = (task: Task) => {
+    const badgeInfo = getBadgeStyle(task.target_time, task.completed_time);
+    const isExpanded = expandedTasks[task.id];
+
+    return (
+      <div
+        key={task.id}
+        className={`relative overflow-hidden rounded-xl border p-3 flex flex-col gap-2 transition-all duration-200 shadow-sm ${
+          task.is_done
+            ? 'bg-zinc-50 border-zinc-200 opacity-70'
+            : 'bg-white border-zinc-200 hover:border-zinc-300 hover:shadow-md'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 flex-grow cursor-pointer" onClick={() => onToggleTask(task.id)}>
+            <button
+              className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                task.is_done
+                  ? 'border-indigo-500 bg-indigo-500 text-white'
+                  : 'border-zinc-300 bg-white hover:border-indigo-400'
+              }`}
+            >
+              {task.is_done && <span className="text-[10px] font-bold">✓</span>}
+            </button>
+
+            <div className="space-y-0.5">
+              <span className={`text-sm font-semibold tracking-wide block ${
+                task.is_done ? 'line-through text-zinc-400' : 'text-zinc-800'
+              }`}>
+                {task.task_name}
+              </span>
+              
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-mono text-zinc-500">
+                  ⏱️ {task.target_time.substring(0, 5)}
+                </span>
+                {task.completed_time && (
+                  <span className="text-[10px] font-mono text-zinc-500">
+                    ✓ {task.completed_time.substring(0, 5)}
+                  </span>
+                )}
+                {task.category && (
+                  <span className="text-[9px] font-mono font-medium border border-zinc-200 bg-zinc-50 text-zinc-500 rounded px-1.5 py-0.5 leading-none">
+                    📁 {task.category}
+                  </span>
+                )}
+                <span className={`text-[9px] font-mono font-medium border rounded px-1.5 py-0.5 leading-none ${getDifficultyBadge(task.tingkat_kesulitan)}`}>
+                  {task.tingkat_kesulitan}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {badgeInfo && (
+              <span className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded-full border tracking-wide ${badgeInfo.style}`}>
+                {badgeInfo.label}
+              </span>
+            )}
+            <button
+              onClick={(e) => toggleTaskExpand(task.id, e)}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                isExpanded ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50'
+              }`}
+            >
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pl-8 pt-2 mt-1 border-t border-zinc-100">
+                {task.notes && (
+                  <div className="text-xs text-zinc-600 mb-3 flex items-start gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                    <p className="leading-relaxed">{task.notes}</p>
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onEditTask?.(task); }} 
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-zinc-200 shadow-sm text-zinc-600 hover:bg-zinc-50 transition-colors flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Ubah
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onDeleteTask?.(task.id); }} 
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 border border-rose-200 shadow-sm text-rose-600 hover:bg-rose-100 transition-colors flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Hapus
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   if (tasks.length === 0) {
     return (
       <div className="py-12 text-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50">
         <p className="text-sm text-zinc-500">Belum ada jadwal yang diunggah untuk hari ini.</p>
+      </div>
+    );
+  }
+
+  if (viewMode === 'time') {
+    const sortedTasks = [...tasks].sort((a, b) => a.target_time.localeCompare(b.target_time));
+    return (
+      <div className="space-y-2 pb-24">
+        {sortedTasks.map(task => renderTask(task))}
       </div>
     );
   }
@@ -127,108 +245,7 @@ export default function TaskAccordion({ tasks, onToggleTask, onEditTask, onDelet
                   className="overflow-hidden border-t border-zinc-100 bg-zinc-50/50"
                 >
                   <div className="p-2 space-y-1.5">
-                    {catTasks.map(task => {
-                      const badgeInfo = getBadgeStyle(task.target_time, task.completed_time);
-                      const isExpanded = expandedTasks[task.id];
-
-                      return (
-                        <div
-                          key={task.id}
-                          className={`relative overflow-hidden rounded-xl border p-3 flex flex-col gap-2 transition-all duration-200 shadow-sm ${
-                            task.is_done
-                              ? 'bg-zinc-50 border-zinc-200 opacity-70'
-                              : 'bg-white border-zinc-200 hover:border-zinc-300 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-start gap-3 flex-grow cursor-pointer" onClick={() => onToggleTask(task.id)}>
-                              <button
-                                className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                  task.is_done
-                                    ? 'border-indigo-500 bg-indigo-500 text-white'
-                                    : 'border-zinc-300 bg-white hover:border-indigo-400'
-                                }`}
-                              >
-                                {task.is_done && <span className="text-[10px] font-bold">✓</span>}
-                              </button>
-
-                              <div className="space-y-0.5">
-                                <span className={`text-sm font-semibold tracking-wide block ${
-                                  task.is_done ? 'line-through text-zinc-400' : 'text-zinc-800'
-                                }`}>
-                                  {task.task_name}
-                                </span>
-                                
-                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                  <span className="text-[10px] font-mono text-zinc-500">
-                                    ⏱️ {task.target_time.substring(0, 5)}
-                                  </span>
-                                  {task.completed_time && (
-                                    <span className="text-[10px] font-mono text-zinc-500">
-                                      ✓ {task.completed_time.substring(0, 5)}
-                                    </span>
-                                  )}
-                                  <span className={`text-[9px] font-mono font-medium border rounded px-1.5 py-0.5 leading-none ${getDifficultyBadge(task.tingkat_kesulitan)}`}>
-                                    {task.tingkat_kesulitan}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              {badgeInfo && (
-                                <span className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded-full border tracking-wide ${badgeInfo.style}`}>
-                                  {badgeInfo.label}
-                                </span>
-                              )}
-                              <button
-                                onClick={(e) => toggleTaskExpand(task.id, e)}
-                                className={`p-1.5 rounded-lg border transition-colors ${
-                                  isExpanded ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50'
-                                }`}
-                              >
-                                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                              </button>
-                            </div>
-                          </div>
-
-                          <AnimatePresence>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="pl-8 pt-2 mt-1 border-t border-zinc-100">
-                                  {task.notes && (
-                                    <div className="text-xs text-zinc-600 mb-3 flex items-start gap-1.5">
-                                      <FileText className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
-                                      <p className="leading-relaxed">{task.notes}</p>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex justify-end gap-2">
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); onEditTask?.(task); }} 
-                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-zinc-200 shadow-sm text-zinc-600 hover:bg-zinc-50 transition-colors flex items-center gap-1.5 active:scale-95"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" /> Ubah
-                                    </button>
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); onDeleteTask?.(task.id); }} 
-                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 border border-rose-200 shadow-sm text-rose-600 hover:bg-rose-100 transition-colors flex items-center gap-1.5 active:scale-95"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                    </button>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
+                    {catTasks.map(task => renderTask(task))}
                   </div>
                 </motion.div>
               )}
