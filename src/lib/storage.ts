@@ -23,47 +23,58 @@ export const storage = {
     return { schedule, tasks: tasks || [] };
   },
 
-  saveScheduleJSON: async (json: IngestedScheduleJSON): Promise<Schedule> => {
+  saveScheduleJSON: async (json: IngestedScheduleJSON): Promise<void> => {
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
     if (!userId) throw new Error('Pengguna tidak terautentikasi. Silakan login kembali.');
 
-    let { data: schedule } = await supabase.from('schedules').select('*').eq('date', json.date).maybeSingle();
-    
-    if (schedule) {
-      await supabase.from('schedules').update({ created_at: new Date().toISOString() }).eq('id', schedule.id);
-    } else {
-      const newSchedule = { 
-        id: 'sched-' + generateUUID(), 
+    // Group tasks by their date
+    const tasksByDate: { [key: string]: typeof json.tasks } = {};
+    for (const task of json.tasks) {
+      const taskDate = task.date || json.date;
+      if (!tasksByDate[taskDate]) {
+        tasksByDate[taskDate] = [];
+      }
+      tasksByDate[taskDate].push(task);
+    }
+
+    // Process each date group
+    for (const [dateStr, tasks] of Object.entries(tasksByDate)) {
+      let { data: schedule } = await supabase.from('schedules').select('*').eq('date', dateStr).maybeSingle();
+      
+      if (schedule) {
+        await supabase.from('schedules').update({ created_at: new Date().toISOString() }).eq('id', schedule.id);
+      } else {
+        const newSchedule = { 
+          id: 'sched-' + generateUUID(), 
+          user_id: userId,
+          date: dateStr, 
+          created_at: new Date().toISOString() 
+        };
+        const { data, error } = await supabase.from('schedules').insert([newSchedule]).select().single();
+        if (error) throw new Error(`Gagal membuat jadwal baru untuk tanggal ${dateStr}: ${error.message}`);
+        schedule = data;
+      }
+
+      if (!schedule) {
+        throw new Error(`Gagal memproses jadwal untuk tanggal ${dateStr}.`);
+      }
+
+      const newTasks = tasks.map((t, idx) => ({
+        id: `task-${schedule!.id}-${idx}-${generateUUID()}`,
         user_id: userId,
-        date: json.date, 
-        created_at: new Date().toISOString() 
-      };
-      const { data, error } = await supabase.from('schedules').insert([newSchedule]).select().single();
-      if (error) throw new Error(`Gagal membuat jadwal baru: ${error.message}`);
-      schedule = data;
+        schedule_id: schedule!.id,
+        task_name: t.task_name,
+        target_time: t.target_time,
+        category: t.category || 'Lainnya',
+        notes: t.notes || '',
+        is_done: false,
+        tingkat_kesulitan: t.tingkat_kesulitan || 'Sedang'
+      }));
+
+      const { error: tasksError } = await supabase.from('tasks').insert(newTasks);
+      if (tasksError) throw new Error(`Gagal menyimpan daftar tugas untuk tanggal ${dateStr}: ${tasksError.message}`);
     }
-
-    if (!schedule) {
-      throw new Error('Gagal memproses jadwal.');
-    }
-
-    const newTasks = json.tasks.map((t, idx) => ({
-      id: `task-${schedule!.id}-${idx}-${generateUUID()}`,
-      user_id: userId,
-      schedule_id: schedule!.id,
-      task_name: t.task_name,
-      target_time: t.target_time,
-      category: t.category || 'Lainnya',
-      notes: t.notes || '',
-      is_done: false,
-      tingkat_kesulitan: t.tingkat_kesulitan || 'Sedang'
-    }));
-
-    const { error: tasksError } = await supabase.from('tasks').insert(newTasks);
-    if (tasksError) throw new Error(`Gagal menyimpan daftar tugas: ${tasksError.message}`);
-
-    return schedule;
   },
 
   addTask: async (dateStr: string, taskData: Omit<Task, 'id' | 'schedule_id' | 'is_done' | 'completed_time'>): Promise<Task> => {

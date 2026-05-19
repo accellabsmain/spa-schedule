@@ -20,6 +20,7 @@ export interface Task {
 }
 
 export interface IngestedTask {
+  date?: string;
   task_name: string;
   target_time: string; // Format: HH:mm:ss
   category: string;
