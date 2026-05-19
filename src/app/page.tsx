@@ -83,7 +83,7 @@ export default function DashboardPage() {
   const handleToggleTask = async (taskId: string) => {
     const task = scheduleData.tasks.find(t => t.id === taskId);
     if (!task) return;
-    
+
     // Optimistic Update
     setScheduleData(prev => ({
       ...prev,
@@ -148,7 +148,7 @@ export default function DashboardPage() {
   const { percent, completed, total } = calculateAnalytics();
 
   if (isInitializing) {
-    return <LoadingScreen message="Menghubungkan ke Supabase Cloud..." />;
+    return <LoadingScreen message="Loading Your Schedule..." />;
   }
 
   const slideVariants = {
@@ -177,7 +177,7 @@ export default function DashboardPage() {
                 SPA {isFetching && <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />}
               </h1>
               <span className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase font-mono">
-                Supabase Sync
+                Personal Schedule App
               </span>
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
         <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.4} onDragEnd={handleDragEnd} className="flex-grow overflow-y-auto px-5 py-6 space-y-6 z-10 active:cursor-grabbing select-none">
           <AnimatePresence custom={slideDirection} mode="wait">
             <motion.div key={activeDate} custom={slideDirection} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="space-y-6">
-              
+
               <div className="flex flex-col py-5 px-6 bg-white rounded-3xl border border-zinc-200 shadow-sm backdrop-blur-md">
                 <div className="flex items-end justify-between mb-3">
                   <div>
@@ -241,11 +241,11 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-3xl font-black text-zinc-900 leading-none tracking-tight">{percent}%</span>
                 </div>
-                
+
                 <div className="h-3.5 w-full bg-zinc-100/80 rounded-full overflow-hidden mb-4 shadow-inner border border-zinc-200/50">
                   <motion.div className={`h-full rounded-full shadow-sm ${percent === 100 ? 'bg-indigo-500' : percent >= 90 ? 'bg-emerald-500' : percent >= 70 ? 'bg-teal-400' : percent >= 20 ? 'bg-amber-400' : 'bg-rose-500'}`} initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.8 }} />
                 </div>
-                
+
                 <div className="text-center px-2 py-2.5 bg-zinc-50 rounded-xl border border-zinc-100">
                   <p className="text-xs font-bold text-zinc-700">
                     {total === 0 ? '☕ Belum ada agenda. Tekan + untuk menambah!' : percent === 100 ? 'Sigma Rizz 🗿' : percent >= 90 ? 'Manteb 🔥' : percent >= 70 ? 'okeyy cukup baik 👍' : percent >= 20 ? 'Apalah, Ga Konsisten 🥴' : 'EMang lemah 💀'}
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             </motion.div>
           </AnimatePresence>
         </motion.div>
-        
+
         <button onClick={handleOpenAddModal} className="absolute bottom-6 right-6 w-[52px] h-[52px] bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-600/40 flex items-center justify-center text-white hover:bg-indigo-500 active:scale-[0.9] transition-all z-40 border border-indigo-400">
           <Plus className="w-7 h-7" />
         </button>

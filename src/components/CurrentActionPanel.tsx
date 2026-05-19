@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Task, DifficultyLevel } from '../lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, PlayCircle, ShieldAlert } from 'lucide-react';
+import { Clock, PlayCircle } from 'lucide-react';
 
 interface CurrentActionPanelProps {
   tasks: Task[];
@@ -37,12 +37,6 @@ export default function CurrentActionPanel({ tasks, onToggleTask }: CurrentActio
 
   const currentMinutes = timeToMinutes(currentTime);
 
-  const overdueTasks = tasks.filter(t => {
-    if (t.is_done) return false;
-    const taskMinutes = timeToMinutes(t.target_time);
-    return currentMinutes - taskMinutes > 5;
-  });
-
   const sortedTasks = [...tasks].sort((a, b) => timeToMinutes(a.target_time) - timeToMinutes(b.target_time));
 
   let activeTask: Task | null = null;
@@ -73,51 +67,6 @@ export default function CurrentActionPanel({ tasks, onToggleTask }: CurrentActio
 
   return (
     <div className="space-y-4">
-      <AnimatePresence>
-        {overdueTasks.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="relative overflow-hidden rounded-2xl border border-rose-200 bg-rose-50 p-4 shadow-sm"
-          >
-            <div className="absolute top-0 left-0 bottom-0 w-[4px] bg-rose-500" />
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 p-1.5 rounded-lg bg-rose-100 text-rose-600 animate-pulse mt-0.5">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <div className="flex-grow space-y-2">
-                <h4 className="text-sm font-bold tracking-wide text-rose-800">
-                  ⚠️ Ini Harus Dikerjain Dulu!
-                </h4>
-                <p className="text-xs text-rose-600 leading-relaxed font-medium">
-                  Ada jadwal yang terlewatkan dan belum dicentang. Selesaikan segera:
-                </p>
-                <div className="space-y-1.5 pt-1">
-                  {overdueTasks.map(ot => (
-                    <div
-                      key={ot.id}
-                      onClick={() => onToggleTask(ot.id)}
-                      className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white hover:bg-rose-100/50 border border-rose-100 cursor-pointer transition-all duration-200 active:scale-[0.98] shadow-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
-                          {ot.target_time.substring(0, 5)}
-                        </span>
-                        <span className="text-xs font-semibold text-rose-900 line-clamp-1">{ot.task_name}</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-rose-400 flex-shrink-0">
-                        Selesaikan ➔
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-5 shadow-md shadow-zinc-200/50">
         <div className="absolute top-0 right-0 p-3 text-[10px] font-mono font-bold text-zinc-500 flex items-center gap-1.5 bg-zinc-50 rounded-bl-xl border-l border-b border-zinc-200">
           <span className="relative flex h-2 w-2">
